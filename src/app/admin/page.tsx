@@ -17,7 +17,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { FaSpinner, FaCalendarAlt, FaChartLine } from 'react-icons/fa';
-import { format } from 'date-fns';
 
 interface SummaryItem {
   number: string;
@@ -493,12 +492,6 @@ export default function AdminPanel() {
             >
               Daily Summary
             </TabsTrigger>
-            <TabsTrigger 
-              value="timeSlots" 
-              className="px-6 py-3 text-lg font-medium transition-all duration-200 hover:bg-indigo-50 rounded-lg"
-            >
-              Time Slots
-            </TabsTrigger>
           </TabsList>
           
           
@@ -792,21 +785,21 @@ export default function AdminPanel() {
                                 </table>
                               </div>          
                   {/* All Numbers Distribution */}
-                  <div>
-                    <h4 className="text-md font-medium mb-2 text-gray-700">Number Distribution</h4>
-                    <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 max-h-[300px] overflow-y-auto">
-                      {getActiveNumbers(slot.entries).map((item) => (
-                        <div 
-                          key={item.number}
-                          className="p-2 border rounded-lg text-center bg-blue-50 border-blue-200"
-                        >
-                          <div className="font-medium">{item.number}</div>
-                          <div className="text-green-600 font-medium">₹{item.total}</div>
-                          <div className="text-xs text-gray-500">{item.userCount} users</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                              <div>
+                                <h4 className="text-md font-medium mb-2 text-gray-700">Number Distribution</h4>
+                                  <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 max-h-[300px] overflow-y-auto">
+                                    {getActiveNumbers(todaySummary).map((item) => (
+                                      <div 
+                                        key={item.number}
+                                        className="p-2 border rounded-lg text-center bg-blue-50 border-blue-200"
+                                      >
+                                        <div className="font-medium">{item.number}</div>
+                                        <div className="text-green-600 font-medium">₹{item.total}</div>
+                                        <div className="text-xs text-gray-500">{item.userCount} users</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                              </div>
                 </div>
               </CardContent>
             </Card>
