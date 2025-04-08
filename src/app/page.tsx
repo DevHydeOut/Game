@@ -111,6 +111,7 @@ export default function YourGameApp() {
 
       const groupedSlots: Record<string, Record<string, { amount: number, users: Set<string> }>> = {};
 
+      // Modify this part of the fetchData function where you're processing the bets
       rawData.forEach(entry => {
         const slotKey = getTimeSlotKey(entry.createdAt);
         const slotTime = new Date(slotKey);
@@ -128,6 +129,9 @@ export default function YourGameApp() {
           groupedSlots[slotKey][entry.number].amount += entry.amount;
           if (entry.userId) {
             groupedSlots[slotKey][entry.number].users.add(entry.userId);
+          } else {
+            // For entries without userId, use a fallback unique ID to still count them as separate users
+            groupedSlots[slotKey][entry.number].users.add(`anonymous-${Date.now()}-${Math.random()}`);
           }
         }
       });
@@ -258,42 +262,83 @@ export default function YourGameApp() {
         </div>
 
         {timeSlots.map((slot, index) => {
-          const aggregatedBets: AggregatedBet[] = [];
-          const numberUserMap = new Map<string, Set<string>>();
-          const numberAmountMap = new Map<string, number>();
+         const aggregatedBets: AggregatedBet[] = [];
+         const numberUserMap = new Map<string, Set<string>>();
+         const numberAmountMap = new Map<string, number>();
 
-          slot.entries.forEach(entry => {
-            const { number, amount, userId } = entry;
-            if (!numberAmountMap.has(number)) numberAmountMap.set(number, 0);
-            numberAmountMap.set(number, numberAmountMap.get(number)! + amount);
-            if (!numberUserMap.has(number)) numberUserMap.set(number, new Set<string>());
-            if (userId) numberUserMap.get(number)!.add(userId);
-          });
+         slot.entries.forEach(entry => {
+          const { number, amount, userId } = entry;
+          if (!numberAmountMap.has(number)) {
+            numberAmountMap.set(number, 0);
+            numberUserMap.set(number, new Set<string>());
+          }
+          
+          numberAmountMap.set(number, numberAmountMap.get(number)! + amount);
+          
+          // Use the ID if available, otherwise create a unique ID for this entry
+          const userIdentifier = userId || `entry-${entry.id || Date.now()}-${Math.random()}`;
+          numberUserMap.get(number)!.add(userIdentifier);
+        });
 
+          // After processing all entries, create the aggregated bets
           numberAmountMap.forEach((amount, number) => {
+            const userCount = numberUserMap.get(number)!.size;
+            console.log(`Number ${number}: Amount=${amount}, Users=${userCount}`);
+            
             aggregatedBets.push({
               number,
               amount,
-              userCount: numberUserMap.get(number)?.size || 1
+              userCount: userCount
             });
           });
 
-          const maxNumber = viewType === 'single' ? 9 : 99;
-          const allNumbersWithBets = Array.from({ length: maxNumber + 1 }, (_, i) => {
-            const num = i.toString().padStart(viewType === 'jodi' ? 2 : 1, '0');
-            const existingBet = aggregatedBets.find(bet => bet.number === num);
-            return existingBet || { number: num, amount: Infinity, userCount: Infinity };
-          }).filter(item => item.number !== '00');
+
+
+console.log('Aggregated bets before sorting:', aggregatedBets);
+
+
+const maxNumber = viewType === 'single' ? 9 : 99;
+const allNumbersWithBets = Array.from({ length: maxNumber + 1 }, (_, i) => {
+  const num = i.toString().padStart(viewType === 'jodi' ? 2 : 1, '0');
+  const existingBet = aggregatedBets.find(bet => bet.number === num);
+  return existingBet || { number: num, amount: Infinity, userCount: Infinity };
+}).filter(item => viewType === 'single' || item.number !== '00');
+
+          // Add after the numberAmountMap forEach loop
+          console.log('Aggregated bets before sorting:', aggregatedBets);
+
 
           const leastBetNumbers = allNumbersWithBets
-            .filter(item => item.amount !== Infinity)
-            .sort((a, b) => {
-              if (a.amount !== b.amount) return a.amount - b.amount;
-              if (a.userCount !== b.userCount) return a.userCount - b.userCount;
-              return parseInt(a.number) - parseInt(b.number);
-            })
-            .slice(0, 3)
-            .map(item => item.number);
+          .filter(item => item.amount !== Infinity)
+          .sort((a, b) => {
+            console.log(`Comparing ${a.number}(₹${a.amount}, ${a.userCount} users) vs ${b.number}(₹${b.amount}, ${b.userCount} users)`);
+            
+            // Primary sort: by amount (lowest first)
+            if (a.amount !== b.amount) {
+              return a.amount - b.amount;
+            }
+            
+            console.log(`  Amount tie between ${a.number} and ${b.number}, checking user count`);
+            // First tie-breaker: by user count (lowest first)
+            if (a.userCount !== b.userCount) {
+              return a.userCount - b.userCount;
+            }
+            
+            console.log(`  User count tie between ${a.number} and ${b.number}, using number value`);
+            // Second tie-breaker: by number value (lowest first)
+            return parseInt(a.number) - parseInt(b.number);
+          })
+          .slice(0, 3)
+          .map(item => item.number);
+
+// If we don't have enough numbers, pad with dashes
+while (leastBetNumbers.length < 3) {
+  leastBetNumbers.push('-');
+}
+
+
+          // Add after the sorting
+          console.log('Sorted least bet numbers:', leastBetNumbers);
 
           return (
             <div key={slot.timeKey} className={`grid grid-cols-5 text-center text-sm py-2 ${index % 2 === 0 ? 'bg-blue-50' : 'bg-white'}`}>

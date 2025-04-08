@@ -585,15 +585,17 @@ export default function AdminPanel() {
                 <CardContent className="p-0">
                   {pendingEntries.length > 0 ? (
                     <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
-                      {pendingEntries.map((entry) => (
-                        <div key={entry.id} className="grid grid-cols-3 px-6 py-4 hover:bg-gray-50 transition-colors duration-200">
-                          <span className="font-medium text-lg text-gray-900">{entry.number}</span>
-                          <span className="text-green-600 font-medium">₹{entry.amount}</span>
-                          <span className="text-gray-500">
-                            {entry.createdAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-                          </span>
-                        </div>
-                      ))}
+                      {pendingEntries
+                        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) // Sort by latest first
+                        .map((entry) => (
+                          <div key={entry.id} className="grid grid-cols-3 px-6 py-4 hover:bg-gray-50 transition-colors duration-200">
+                            <span className="font-medium text-lg text-gray-900">{entry.number}</span>
+                            <span className="text-green-600 font-medium">₹{entry.amount}</span>
+                            <span className="text-gray-500 text-right">
+                              {entry.createdAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                            </span>
+                          </div>
+                        ))}
                     </div>
                   ) : (
                     <div className="flex items-center justify-center py-12 text-gray-500">
